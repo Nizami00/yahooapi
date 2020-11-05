@@ -17,8 +17,8 @@
         <li><?php echo $stock->getLongName() ?></li><br>
         <li><?php echo $stock->getPreviousClose() ?></li><br>
         <li><?php echo $stock->getOpen() ?></li><br>
-        <li><?php echo $stock->getVolume() ?></li><br>
-        <li><?php echo $stock->getAvgVolume() ?></li><br>
+        <li><?php echo number_format($stock->getVolume()) ?></li><br>
+        <li><?php echo number_format($stock->getAvgVolume()) ?></li><br>
         <li><?php echo $stock->getTime() ?></li><br>
     </ul>
 </form>

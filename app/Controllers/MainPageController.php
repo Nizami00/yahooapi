@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 
 use App\Models\Stock;
-use Carbon\Carbon;
+use App\Services\StockService;
 use Scheb\YahooFinanceApi\ApiClient;
 use Scheb\YahooFinanceApi\ApiClientFactory;
 use GuzzleHttp\Client;
@@ -29,7 +29,7 @@ class MainPageController
 
         $stockRequest = $client->getQuote($_POST['search']);
 
-        $stockRequestData = json_decode(json_encode($stockRequest),true);
+        $stockRequestData = json_decode(json_encode($stockRequest), true);
 
 
         $stockQuery = query()
@@ -40,9 +40,9 @@ class MainPageController
             ->execute()
             ->fetchAssociative();
 
-        if(!empty($stockQuery)){
+        if (!empty($stockQuery)) {
             $stock = new Stock(
-                (int) $stockQuery['id'],
+                (int)$stockQuery['id'],
                 $stockQuery['shortName'],
                 $stockQuery['longName'],
                 $stockQuery['previousClose'],
@@ -63,61 +63,21 @@ class MainPageController
 
             $updatedStockTime = explode(':', $updatedStockTime);
             $stockTimeSeconds = ($updatedStockTime[0] * 60 * 60) + ($updatedStockTime[1] * 60) + $updatedStockTime[2];
-            var_dump($stockTimeSeconds, $currentTimeSeconds);
 
-            if($currentTimeSeconds - $stockTimeSeconds> 600){
-                $this->update($stockRequestData);
+            if ($currentTimeSeconds - $stockTimeSeconds > 600) {
+
+                $response = (new StockService())->updateStock($stockRequestData);
+                $stock = $response->stock();
             }
-        }else{
-            $this->store($stockRequestData);
+        }else {
+
+                $response = (new StockService())->storeStock($stockRequestData);
+                $stock = $response->stock();
+            }
+
+
+            return require_once __DIR__ . '/../Views/MainPageView.php';
         }
-
-
-        return require_once __DIR__  . '/../Views/MainPageView.php';
-    }
-
-    private function update(array $stockData)
-    {
-        query()
-            ->update('stocks')
-            ->set('previousClose', ':previousClose')
-            ->set('open', ':open')
-            ->set('volume', ':volume')
-            ->set('avgVolume', ':avgVolume')
-            ->set('updated_at', ':time')
-            ->setParameter('previousClose', $stockData['regularMarketPreviousClose'])
-            ->setParameter('open', $stockData['regularMarketOpen'])
-            ->setParameter('volume', $stockData['regularMarketVolume'])
-            ->setParameter('avgVolume', $stockData['averageDailyVolume3Month'])
-            ->setParameter('time', Carbon::now()->format('h:i:s'))
-            ->where('shortName = :shortName')
-            ->setParameter('shortName', $stockData['symbol'])
-            ->execute();
-
-    }
-
-    private function store(array $stockData)
-    {
-        query()
-            ->insert('stocks')
-            ->values([
-                'shortName' => ':shortName',
-                'longName' => ':longName',
-                'previousClose' => ':previousClose',
-                'open' => ':open',
-                'volume' => ':volume',
-                'avgVolume' => ':avgVolume',
-                'updated_at' => ':updated_at'
-            ])
-            ->setParameter('shortName', $stockData['symbol'])
-            ->setParameter('longName', $stockData['shortName'])
-            ->setParameter('previousClose', $stockData['regularMarketPreviousClose'])
-            ->setParameter('open', $stockData['regularMarketOpen'])
-            ->setParameter('volume', $stockData['regularMarketVolume'])
-            ->setParameter('avgVolume', $stockData['averageDailyVolume3Month'])
-            ->setParameter('updated_at', Carbon::now()->format('h:i:s'))
-            ->execute();
-    }
 
 
 }
