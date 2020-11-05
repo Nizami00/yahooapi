@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Models\Stock;
 use App\Services\StockService;
+use App\Services\ValidationService;
 use Scheb\YahooFinanceApi\ApiClient;
 use Scheb\YahooFinanceApi\ApiClientFactory;
 use GuzzleHttp\Client;
@@ -22,12 +23,13 @@ class MainPageController
     public function search()
     {
 
-        $client = ApiClientFactory::createApiClient();
+        //uses _POST['search'] request
+        $stockRequest = $this->makeYahooApiRequest();
 
-        $guzzleClient = new Client($options = []);
-        $client = ApiClientFactory::createApiClient($guzzleClient);
-
-        $stockRequest = $client->getQuote($_POST['search']);
+        //check if request is valid
+        if(!$stockRequest){
+            header('Location: /');
+        }
 
         $stockRequestData = json_decode(json_encode($stockRequest), true);
 
@@ -40,31 +42,13 @@ class MainPageController
             ->execute()
             ->fetchAssociative();
 
+
         if (!empty($stockQuery)) {
-            $stock = new Stock(
-                (int)$stockQuery['id'],
-                $stockQuery['shortName'],
-                $stockQuery['longName'],
-                $stockQuery['previousClose'],
-                $stockQuery['open'],
-                $stockQuery['volume'],
-                $stockQuery['avgVolume'],
-                $stockQuery['updated_at'],
-            );
+            $stock = Stock::create($stockQuery);
 
+            $needsToUpdate = (new ValidationService())->compareTime($stock);
 
-            $currentTime = date("h:i:s", time());
-
-            $updatedStockTime = $stock->getTime();
-            $updatedStockFormattedTime = date("h:i:s", strtotime($updatedStockTime));
-
-            $currentTime = explode(':', $currentTime);
-            $currentTimeSeconds = ($currentTime[0] * 60 * 60) + ($currentTime[1] * 60) + $currentTime[2];
-
-            $updatedStockTime = explode(':', $updatedStockTime);
-            $stockTimeSeconds = ($updatedStockTime[0] * 60 * 60) + ($updatedStockTime[1] * 60) + $updatedStockTime[2];
-
-            if ($currentTimeSeconds - $stockTimeSeconds > 600) {
+            if ($needsToUpdate) {
 
                 $response = (new StockService())->updateStock($stockRequestData);
                 $stock = $response->stock();
@@ -77,6 +61,16 @@ class MainPageController
 
 
             return require_once __DIR__ . '/../Views/MainPageView.php';
+        }
+
+        private function makeYahooApiRequest(): \Scheb\YahooFinanceApi\Results\Quote
+        {
+            $client = ApiClientFactory::createApiClient();
+
+            $guzzleClient = new Client($options = []);
+            $client =  ApiClientFactory::createApiClient($guzzleClient);
+
+            return $client->getQuote($_POST['search']);
         }
 
 

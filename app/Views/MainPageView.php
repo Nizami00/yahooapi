@@ -11,16 +11,25 @@
     <label for="search">Enter stock</label>
     <input type="text" id="search" name="search" required/>
     <button type="submit">Search</button>
-    <p>Stock You searched for</p>
-    <ul>
-        <li><?php echo $stock->getShortName() ?></li><br>
-        <li><?php echo $stock->getLongName() ?></li><br>
-        <li><?php echo $stock->getPreviousClose() ?></li><br>
-        <li><?php echo $stock->getOpen() ?></li><br>
-        <li><?php echo number_format($stock->getVolume()) ?></li><br>
-        <li><?php echo number_format($stock->getAvgVolume()) ?></li><br>
-        <li><?php echo $stock->getTime() ?></li><br>
-    </ul>
+    <?php if (isset($stock)) : ?>
+        <p>Stock You searched for</p>
+        <ul>
+            <li><?php echo $stock->getShortName() ?></li>
+            <br>
+            <li><?php echo $stock->getLongName() ?></li>
+            <br>
+            <li><?php echo $stock->getPreviousClose() ?></li>
+            <br>
+            <li><?php echo $stock->getOpen() ?></li>
+            <br>
+            <li><?php echo number_format($stock->getVolume()) ?></li>
+            <br>
+            <li><?php echo number_format($stock->getAvgVolume()) ?></li>
+            <br>
+            <li><?php echo $stock->getTime() ?></li>
+            <br>
+        </ul>
+    <?php endif; ?>
 </form>
 </body>
 </html>

@@ -70,5 +70,19 @@ class Stock
         return $this->updatedAt;
     }
 
+    public static function create(array $stockQuery): Stock
+    {
+        return new self(
+            (int)$stockQuery['id'],
+            $stockQuery['shortName'],
+            $stockQuery['longName'],
+            $stockQuery['previousClose'],
+            $stockQuery['open'],
+            $stockQuery['volume'],
+            $stockQuery['avgVolume'],
+            $stockQuery['updated_at'],
+        );
+    }
+
 
 }
